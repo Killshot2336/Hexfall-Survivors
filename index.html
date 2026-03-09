@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>VOIDLINE: Rift Reaper</title>
+  <meta name="description" content="Neon arena action game built for browser play." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game" aria-label="VOIDLINE: Rift Reaper game canvas"></canvas>
+
+  <div id="hud" class="hud hidden">
+    <div class="hud-left panel">
+      <div class="meter-head"><span>Hull</span><strong id="hpText">0 / 0</strong></div>
+      <div class="meter"><div id="hpBar" class="fill hp"></div></div>
+      <div class="meter-head"><span>Pulse</span><strong id="pulseText">0%</strong></div>
+      <div class="meter"><div id="pulseBar" class="fill pulse"></div></div>
+      <div class="meter-head"><span>Rift Slash</span><strong id="slashText">Ready</strong></div>
+      <div class="meter"><div id="slashBar" class="fill slash"></div></div>
+    </div>
+
+    <div class="hud-center panel compact">
+      <div class="pill">Wave <strong id="waveText">1</strong></div>
+      <div class="pill">Event <strong id="eventText">Assault</strong></div>
+      <div class="pill">Sector <strong id="sectorText">I</strong></div>
+      <div class="pill">Archetype <strong id="archetypeText">None</strong></div>
+      <div class="pill">Score <strong id="scoreText">0</strong></div>
+      <div class="pill">Credits <strong id="creditsText">0</strong></div>
+      <div class="pill combo">Combo <strong id="comboText">x1.0</strong></div>
+      <div class="pill shield">Shield <strong id="shieldText">0</strong></div>
+      <div class="pill contract">Contract <strong id="contractText">Stand by</strong></div>
+      <div class="pill synergy">Synergy <strong id="synergyText">None</strong></div>
+    </div>
+
+    <div class="hud-right panel compact">
+      <div class="mini">Move — WASD / Arrow Keys</div>
+      <div class="mini">Rift Slash — Shift</div>
+      <div class="mini">Pulse — Space</div>
+      <div class="mini">Pause — P / Esc</div>
+    </div>
+  </div>
+
+  <div id="comboBurst" class="combo-burst hidden" aria-hidden="true"></div>
+
+  <div id="momentOverlay" class="moment-overlay hidden" aria-hidden="true"></div>
+
+  <div id="bossHud" class="boss-hud hidden">
+    <div class="boss-name" id="bossName">Boss</div>
+    <div class="boss-meter"><div id="bossBar" class="boss-fill"></div></div>
+  </div>
+
+  <div id="menu" class="overlay">
+    <div class="menu-grid">
+      <section class="panel hero">
+        <div class="hero-rings" aria-hidden="true"></div>
+        <div class="eyebrow">VOIDLINE</div>
+        <h1>Rift Reaper</h1>
+        <p class="lead">
+          Fight through waves of enemies spilling from unstable rifts.
+          Cut through the swarm, defeat bosses, and push each run further.
+        </p>
+        <div class="button-row">
+          <button id="startBtn" class="btn primary">Start Game</button>
+          <button id="howBtn" class="btn">How to Play</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><span>Best Score</span><strong id="bestScore">0</strong></div>
+          <div class="stat-card"><span>Banked Credits</span><strong id="bankedCredits">0</strong></div>
+          <div class="stat-card"><span>Best Wave</span><strong id="bestWave">0</strong></div>
+          <div class="stat-card"><span>Bosses Defeated</span><strong id="bossesTotal">0</strong></div>
+        </div>
+        <div class="footnote">Short runs. Strong builds. Clean feedback.</div>
+      </section>
+
+      <aside class="panel side-panel">
+        <div class="tab-row">
+          <button id="tabMeta" class="tab active" aria-selected="true">Upgrades</button>
+          <button id="tabAchievements" class="tab" aria-selected="false">Milestones</button>
+          <button id="tabCards" class="tab" aria-selected="false">Modules</button>
+          <button id="tabSettings" class="tab" aria-selected="false">Settings</button>
+        </div>
+        <div id="metaPanel" class="tab-panel active">
+          <div id="metaShop" class="list"></div>
+        </div>
+        <div id="achievementPanel" class="tab-panel">
+          <div id="achievementList" class="list"></div>
+        </div>
+        <div id="cardPanel" class="tab-panel">
+          <div class="module-slot-wrap">
+            <div class="eyebrow">Equipped Rift Modules</div>
+            <div id="moduleSlots" class="module-slots"></div>
+          </div>
+          <div class="eyebrow module-label">Inventory</div>
+          <div id="cardInventory" class="list"></div>
+        </div>
+        <div id="settingsPanel" class="tab-panel">
+          <div class="settings-grid">
+            <div class="list-item">
+              <div class="list-head">
+                <div><h3>Graphics Quality</h3><p>Adjust visuals for weaker or stronger devices.</p></div>
+                <div class="badge">Device</div>
+              </div>
+              <div class="settings-row">
+                <select id="qualitySetting" class="select">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+                <label class="toggle"><input id="shakeToggle" type="checkbox" checked /> Screen Shake</label>
+              </div>
+            </div>
+
+            <div class="list-item">
+              <div class="list-head">
+                <div><h3>Audio</h3><p>Tune music and effects without leaving the game.</p></div>
+                <div class="badge">Sound</div>
+              </div>
+              <div class="slider-group">
+                <label>Master <input id="masterVolume" type="range" min="0" max="1" step="0.01" /></label>
+                <label>Music <input id="musicVolume" type="range" min="0" max="1" step="0.01" /></label>
+                <label>SFX <input id="sfxVolume" type="range" min="0" max="1" step="0.01" /></label>
+              </div>
+            </div>
+
+            <div class="list-item">
+              <div class="list-head">
+                <div><h3>Customization</h3><p>Change HUD, ship, and bullet colors live.</p></div>
+                <div class="badge">Style</div>
+              </div>
+              <div class="color-grid">
+                <label>HUD <input id="hudColor" type="color" /></label>
+                <label>Ship <input id="shipColor" type="color" /></label>
+                <label>Bullet <input id="bulletColor" type="color" /></label>
+              </div>
+            </div>
+
+            <div class="list-item">
+              <div class="list-head">
+                <div><h3>Data</h3><p>Export, import, or reset your save safely.</p></div>
+                <div class="badge">Save</div>
+              </div>
+              <div class="button-row stretch">
+                <button id="exportSaveBtn" class="btn">Export Save</button>
+                <button id="importSaveBtn" class="btn">Import Save</button>
+                <button id="resetSaveBtn" class="btn">Reset Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="howPanel" class="overlay hidden dimmed">
+    <div class="panel modal">
+      <div class="eyebrow">Quick Start</div>
+      <h2>How to Play</h2>
+      <ul class="rules">
+        <li>Move constantly. Weapons fire automatically at the best nearby target.</li>
+        <li>Press <strong>Shift</strong> to use Rift Slash and dash through threats.</li>
+        <li>Press <strong>Space</strong> when Pulse is full to clear the area around you.</li>
+        <li>Collect dropped credits. Clear waves to choose upgrades and relics.</li>
+        <li>Bosses arrive every 10 waves. Rare Rift Modules permanently strengthen future runs.</li>
+        <li>Contracts, sectors, power-ups, and modules keep every run evolving.</li>
+      </ul>
+      <div class="button-row"><button id="closeHow" class="btn primary">Back</button></div>
+    </div>
+  </div>
+
+  <div id="upgradeOverlay" class="overlay hidden dimmed">
+    <div class="panel modal wide">
+      <div class="eyebrow">Wave Clear</div>
+      <h2>Choose an Upgrade</h2>
+      <p class="sub">Pick one bonus and keep the run alive.</p>
+      <div id="upgradeChoices" class="upgrade-grid"></div>
+    </div>
+  </div>
+
+
+  <div id="relicOverlay" class="overlay hidden dimmed">
+    <div class="panel modal wide">
+      <div class="eyebrow">Relic Cache</div>
+      <h2>Choose a Relic</h2>
+      <p class="sub">A major systems-level mutation for this run.</p>
+      <div id="relicChoices" class="upgrade-grid"></div>
+    </div>
+  </div>
+
+  <div id="pauseOverlay" class="overlay hidden dimmed">
+    <div class="panel modal small center">
+      <h2>Paused</h2>
+      <p class="sub">Resume when ready.</p>
+      <div class="button-row stretch">
+        <button id="resumeBtn" class="btn primary">Resume</button>
+        <button id="pauseMenuBtn" class="btn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameOverOverlay" class="overlay hidden dimmed">
+    <div class="panel modal wide">
+      <div class="eyebrow">Run Complete</div>
+      <h2 id="gameOverTitle">Rift Collapse</h2>
+      <div class="stats-grid end-grid">
+        <div class="stat-card"><span>Score</span><strong id="finalScore">0</strong></div>
+        <div class="stat-card"><span>Wave</span><strong id="finalWave">0</strong></div>
+        <div class="stat-card"><span>Credits</span><strong id="finalCredits">0</strong></div>
+        <div class="stat-card"><span>Best Combo</span><strong id="finalCombo">x1.0</strong></div>
+        <div class="stat-card"><span>Run Time</span><strong id="finalTime">0:00</strong></div>
+      </div>
+      <div id="runSummary" class="summary"></div>
+      <div class="button-row stretch">
+        <button id="continueAdBtn" class="btn reward hidden">▶ Lucky Continue (Ad)</button>
+        <button id="doubleRewardBtn" class="btn reward">◎ Lucky Double Credits (Ad)</button>
+        <button id="retryBtn" class="btn primary">Play Again</button>
+        <button id="menuBtn" class="btn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="waveBanner" class="wave-banner hidden"></div>
+  <div id="toast" class="toast"></div>
+  <div id="fpsTag" class="fps hidden">FPS 0</div>
+
+
+  <div id="moduleModal" class="overlay hidden dimmed" aria-hidden="true">
+    <div class="panel modal module-modal">
+      <div class="row-between">
+        <div>
+          <div id="moduleModalRarity" class="badge">MODULE</div>
+          <h2 id="moduleModalName">Rift Module</h2>
+        </div>
+        <button id="closeModuleModal" class="btn">Close</button>
+      </div>
+      <div class="module-modal-body">
+        <div id="moduleModalCard" class="parallax-card" data-rarity="common">
+          <div class="parallax-glow"></div>
+          <div class="parallax-face">
+            <div>
+              <div id="moduleModalCategory" class="module-card-category">CORE MODULE</div>
+              <div id="moduleModalTitle" class="module-card-title">Rift Module</div>
+            </div>
+            <div id="moduleModalLevel" class="module-card-level">Level 1</div>
+          </div>
+        </div>
+        <div class="module-modal-info">
+          <p id="moduleModalDesc">Module description.</p>
+          <div id="moduleModalEffect" class="module-effect-copy"></div>
+          <div id="moduleModalCopies" class="mini">Copies owned: 0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="touchControls" class="touch hidden">
+    <div id="touchPad" class="touch-pad"><div id="touchStick" class="touch-stick"></div></div>
+    <div class="touch-buttons">
+      <button id="slashBtn" class="touch-btn slash">Slash</button>
+      <button id="pulseBtn" class="touch-btn pulse">Pulse</button>
+    </div>
+  </div>
+
+  <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
