@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>VOIDLINE: Rift Reaper</title>
+  <meta name="description" content="Neon arena survival game built for browser play." />
+  <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game" aria-label="VOIDLINE Rift Reaper game canvas"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="hud-block">
+      <div class="stat-row"><span>Hull</span><strong id="hpText">0 / 0</strong></div>
+      <div class="bar"><div id="hpBar"></div></div>
+      <div class="stat-row"><span>Pulse</span><strong id="burstText">0%</strong></div>
+      <div class="bar gold"><div id="burstBar"></div></div>
+      <div class="stat-row"><span>Rift Slash</span><strong id="slashText">0%</strong></div>
+      <div class="bar violet"><div id="slashBar"></div></div>
+    </div>
+    <div class="hud-block center-block">
+      <div class="pill">Wave <strong id="waveText">1</strong></div>
+      <div class="pill">Score <strong id="scoreText">0</strong></div>
+      <div class="pill">Shards <strong id="shardText">0</strong></div>
+      <div class="pill accent">Combo <strong id="comboText">x1.0</strong></div>
+    </div>
+    <div class="hud-block right-block">
+      <div class="mini">Move — WASD / Arrow Keys / Touch</div>
+      <div class="mini">Rift Slash — Shift</div>
+      <div class="mini">Pulse — Space</div>
+      <div class="mini">Pause — Esc / P</div>
+    </div>
+  </div>
+
+  <div id="bossHud" class="boss-hud hidden">
+    <div class="boss-name" id="bossName">RIFT SOVEREIGN</div>
+    <div class="boss-bar"><div id="bossBar"></div></div>
+  </div>
+
+  <div id="waveBanner" class="wave-banner hidden">
+    <div class="eyebrow" id="waveModeText">WAVE START</div>
+    <div class="banner-title" id="waveBannerTitle">Rift Surge</div>
+    <div class="banner-sub" id="waveBannerDesc">Pressure rising. Keep moving.</div>
+  </div>
+
+  <div id="home" class="overlay">
+    <section class="card hero premium">
+      <div class="eyebrow">VOIDLINE</div>
+      <h1>Rift Reaper</h1>
+      <p class="hero-copy">
+        Fight through waves spilling out of unstable rifts.
+        Use Rift Slash and Pulse to survive the swarm,
+        defeat bosses, and push each run further.
+      </p>
+      <div class="button-row">
+        <button id="startBtn" class="btn primary">Start Game</button>
+        <button id="howBtn" class="btn">How to Play</button>
+      </div>
+      <div class="grid two">
+        <div class="info-box">
+          <div class="label">Best Score</div>
+          <div class="value" id="bestScore">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">Vault Credits</div>
+          <div class="value" id="metaCredits">0</div>
+        </div>
+      </div>
+      <div class="home-footnote">Short runs. Permanent upgrades. One more try.</div>
+    </section>
+
+    <aside class="card side-drawer">
+      <div class="drawer-stack">
+        <section class="drawer-section is-open" data-panel="upgrades">
+          <button id="panelToggleUpgrades" class="drawer-toggle" type="button" aria-expanded="true" aria-controls="metaPanel">
+            <span>Permanent Upgrades</span>
+            <span class="drawer-icon" aria-hidden="true"></span>
+          </button>
+          <div id="metaPanel" class="drawer-panel">
+            <div id="metaShop" class="shop-list"></div>
+          </div>
+        </section>
+
+        <section class="drawer-section" data-panel="milestones">
+          <button id="panelToggleMilestones" class="drawer-toggle" type="button" aria-expanded="false" aria-controls="achievementPanel">
+            <span>Milestones</span>
+            <span class="drawer-icon" aria-hidden="true"></span>
+          </button>
+          <div id="achievementPanel" class="drawer-panel hidden">
+            <div id="achievementList" class="achievement-list"></div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <div id="howPanel" class="overlay hidden modal-wrap">
+    <div class="card modal">
+      <div class="eyebrow">Quick Start</div>
+      <h2>How to Play</h2>
+      <ul>
+        <li>Keep moving. Weapons fire automatically at nearby enemies.</li>
+        <li>Press <strong>Shift</strong> to use Rift Slash and cut through a line of enemies.</li>
+        <li>Press <strong>Space</strong> when Pulse is full to clear space around you.</li>
+        <li>Collect shards dropped by enemies. Clear waves to choose upgrades.</li>
+        <li>Every 4th wave is a boss wave. Stay alive as long as you can.</li>
+      </ul>
+      <button id="closeHow" class="btn primary">Back</button>
+    </div>
+  </div>
+
+  <div id="upgradeScreen" class="overlay hidden modal-wrap">
+    <div class="card modal large">
+      <div class="eyebrow">Wave Clear</div>
+      <h2>Choose an Upgrade</h2>
+      <p>Pick one bonus and keep the run alive.</p>
+      <div id="upgradeChoices" class="upgrade-grid"></div>
+    </div>
+  </div>
+
+  <div id="pauseScreen" class="overlay hidden modal-wrap">
+    <div class="card modal">
+      <h2>Paused</h2>
+      <p>Press P or Esc to continue.</p>
+      <div class="button-row">
+        <button id="resumeBtn" class="btn primary">Resume</button>
+        <button id="pauseMenuBtn" class="btn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameOverScreen" class="overlay hidden modal-wrap">
+    <div class="card modal large">
+      <div class="eyebrow">Run Complete</div>
+      <h2 id="finalTitle">Signal Lost</h2>
+      <div class="grid three compact">
+        <div class="info-box"><div class="label">Score</div><div class="value" id="finalScore">0</div></div>
+        <div class="info-box"><div class="label">Wave</div><div class="value" id="finalWave">0</div></div>
+        <div class="info-box"><div class="label">Credits</div><div class="value" id="finalCredits">0</div></div>
+      </div>
+      <div id="runSummary" class="run-summary"></div>
+      <div class="button-row">
+        <button id="retryBtn" class="btn primary">Play Again</button>
+        <button id="menuBtn" class="btn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobileControls" class="mobile-controls hidden">
+    <div id="joystickZone" class="joystick-zone">
+      <div id="joystickKnob" class="joystick-knob"></div>
+    </div>
+    <div class="mobile-actions">
+      <button id="slashBtn" class="action-btn violet">Slash</button>
+      <button id="pulseBtn" class="action-btn gold">Pulse</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="main.js"></script>
+</body>
+</html>
